@@ -270,9 +270,13 @@ def decrypt_values(data):
         return {key: decrypt_values(value) for key, value in data.items()}
 
     # If we got so far, the data must be a string (the encrypted value)
-    data = decrypt_str(data)
+    try:
+        data = decrypt_str(data)
+        # for many Python types, when the result from repr() is passed to eval()
+        # we will get the original object;
+        # we take advantage of this to reconstruct both the original value and type
+        value = eval(data)
+    except cryptography.fernet.InvalidToken:
+        value = str(data)
+    return value
 
-    # for many Python types, when the result from repr() is passed to eval()
-    # we will get the original object;
-    # we take advantage of this to reconstruct both the original value and type
-    return eval(data)
