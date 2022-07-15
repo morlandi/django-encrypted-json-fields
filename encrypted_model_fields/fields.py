@@ -23,7 +23,10 @@ def parse_key(key):
 
 
 def get_crypter():
+
     configured_keys = getattr(settings, 'FIELD_ENCRYPTION_KEY', None)
+    if callable(configured_keys):
+        configured_keys = configured_keys()
 
     if configured_keys is None:
         raise ImproperlyConfigured('FIELD_ENCRYPTION_KEY must be defined in settings')
@@ -44,17 +47,25 @@ def get_crypter():
     return cryptography.fernet.MultiFernet(keys)
 
 
+#CRYPTER = get_crypter()
+CRYPTER = None
+
+
+def get_crypted_lazy():
+    global CRYPTER
+    if CRYPTER is None:
 CRYPTER = get_crypter()
+    return CRYPTER
 
 
 def encrypt_str(s):
     # be sure to encode the string to bytes
-    return CRYPTER.encrypt(s.encode('utf-8'))
+    return get_crypted_lazy().encrypt(s.encode('utf-8'))
 
 
 def decrypt_str(t):
     # be sure to decode the bytes to a string
-    return CRYPTER.decrypt(t.encode('utf-8')).decode('utf-8')
+    return get_crypted_lazy().decrypt(t.encode('utf-8')).decode('utf-8')
 
 
 def calc_encrypted_length(n):
