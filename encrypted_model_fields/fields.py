@@ -192,18 +192,19 @@ class EncryptedJSONField(django.db.models.JSONField):
         self.skip_keys = kwargs.pop("skip_keys", [])
         super().__init__(*args, **kwargs)
 
-    def get_prep_value(self, value):
+    def get_db_prep_save(self, value, connection):
         """
-        Adapted from django.db.models.JSONField to apply encryption;
-        - all simple items will be encrypted;
-        - any dictionary will have all the values encrypted, while the keys will remain untouched.
-        The resulting value can be safely JSON-serialized
+        Return field's value prepared for saving into a database.
+
+        Here, we encrypt all the values in the object, while keeping intact
+        the keys of any dictionary inside the object, if any.
+        More precisely, well'encrypt the repr() of the values to preserve the type;
+        see encrypt_values().
         """
-        if value is None:
-            return value
-        # encrypt the values before serialization
         value = encrypt_values(value)
-        return json.dumps(value, cls=self.encoder)
+        # The encrypted result is itself a valid JSON-serializable object,
+        # so we pass it to our base class for proper serialization
+        return super().get_db_prep_save(value, connection)
 
     def from_db_value(self, value, expression, connection):
         """
