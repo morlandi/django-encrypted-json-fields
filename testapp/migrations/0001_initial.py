@@ -24,6 +24,7 @@ class Migration(migrations.Migration):
                 ('enc_small_integer_field', encrypted_model_fields.fields.EncryptedSmallIntegerField(null=True)),
                 ('enc_positive_small_integer_field', encrypted_model_fields.fields.EncryptedPositiveSmallIntegerField(null=True)),
                 ('enc_big_integer_field', encrypted_model_fields.fields.EncryptedBigIntegerField(null=True)),
+                ('enc_json_field', encrypted_model_fields.fields.EncryptedJSONField(blank=True, default=dict)),
             ],
             options={
             },

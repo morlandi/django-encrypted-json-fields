@@ -27,6 +27,22 @@ class TestModelTestCase(TestCase):
         inst.enc_small_integer_field = 123456789
         inst.enc_positive_small_integer_field = 123456789
         inst.enc_big_integer_field = 9223372036854775807
+        json_obj = {
+            'str_value': 'text',
+            'int_value': 123,
+            'float_value': 123.45,
+            'bool_value': True,
+            'list_value': [1, 2, 'three', False, 5.0],
+            'dict_value': {
+                'aaa': 'AAA',
+                'bbb': 'BBB',
+                'inner': {
+                    'one': 1,
+                    'two': 2,
+                }
+            }
+        }
+        inst.enc_json_field = json_obj
         inst.save()
 
         inst = models.TestModel.objects.get()
@@ -42,6 +58,7 @@ class TestModelTestCase(TestCase):
         self.assertEqual(inst.enc_small_integer_field, 123456789)
         self.assertEqual(inst.enc_positive_small_integer_field, 123456789)
         self.assertEqual(inst.enc_big_integer_field, 9223372036854775807)
+        self.assertEqual(inst.enc_json_field, json_obj)
 
         test_date = datetime.date(2012, 2, 1)
         test_datetime = datetime.datetime(2012, 1, 1, 2, tzinfo=timezone.utc)
@@ -55,6 +72,7 @@ class TestModelTestCase(TestCase):
         inst.enc_small_integer_field = -123456789
         inst.enc_positive_small_integer_field = 0
         inst.enc_big_integer_field = -9223372036854775806
+        inst.enc_json_field = 'Another string'
         inst.save()
 
         inst = models.TestModel.objects.get()
@@ -73,6 +91,7 @@ class TestModelTestCase(TestCase):
         self.assertEqual(inst.enc_small_integer_field, -123456789)
         self.assertEqual(inst.enc_positive_small_integer_field, 0)
         self.assertEqual(inst.enc_big_integer_field, -9223372036854775806)
+        self.assertEqual(inst.enc_json_field, 'Another string')
 
         inst.save()
         inst = models.TestModel.objects.get()
@@ -102,12 +121,15 @@ class TestModelTestCase(TestCase):
         inst.enc_small_integer_field = 123456789
         inst.enc_positive_small_integer_field = 123456789
         inst.enc_big_integer_field = 9223372036854775807
+        inst.enc_json_field = 'A string'
         inst.save()
 
         d = models.TestModel.objects.values()[0]
         for key, value in d.items():
             if key == 'id':
                 continue
+            if key == 'enc_json_field' and value.startswith('"'):
+                value = value[1:]
             self.assertEqual(value[:7], 'gAAAAAB', f'{key} failed: {value}')
 
         inst.save()
@@ -125,6 +147,7 @@ class TestModelTestCase(TestCase):
         enc_small_integer_field = models.TestModel._meta.fields[10]
         enc_positive_small_integer_field = models.TestModel._meta.fields[11]
         enc_big_integer_field = models.TestModel._meta.fields[12]
+        enc_json_field = models.TestModel._meta.fields[12]
 
         self.assertEqual(enc_char_field.get_internal_type(), 'TextField')
         self.assertEqual(enc_text_field.get_internal_type(), 'TextField')
@@ -137,6 +160,7 @@ class TestModelTestCase(TestCase):
         self.assertEqual(enc_small_integer_field.get_internal_type(), 'TextField')
         self.assertEqual(enc_positive_small_integer_field.get_internal_type(), 'TextField')
         self.assertEqual(enc_big_integer_field.get_internal_type(), 'TextField')
+        self.assertEqual(enc_json_field.get_internal_type(), 'TextField')
 
     def test_auto_date(self):
         enc_date_now_field = models.TestModel._meta.fields[4]
@@ -184,6 +208,7 @@ class TestModelTestCase(TestCase):
             inst.enc_small_integer_field = 123456789
             inst.enc_positive_small_integer_field = 123456789
             inst.enc_big_integer_field = 9223372036854775807
+            inst.enc_json_field = 'A string'
             inst.save()
 
         # test that loading the instance from the database results in usable data
@@ -208,6 +233,7 @@ class TestModelTestCase(TestCase):
             self.assertEqual(inst.enc_small_integer_field, 123456789)
             self.assertEqual(inst.enc_positive_small_integer_field, 123456789)
             self.assertEqual(inst.enc_big_integer_field, 9223372036854775807)
+            self.assertEqual(inst.enc_json_field, 'A string')
 
             # save the instance to rotate the key
             inst.save()
@@ -235,6 +261,7 @@ class TestModelTestCase(TestCase):
             self.assertEqual(inst.enc_small_integer_field, 123456789)
             self.assertEqual(inst.enc_positive_small_integer_field, 123456789)
             self.assertEqual(inst.enc_big_integer_field, 9223372036854775807)
+            self.assertEqual(inst.enc_json_field, 'A string')
 
         # test that the instance with rotated key is no longer readable using the old key
         with self.settings(FIELD_ENCRYPTION_KEY=[key1, ]):

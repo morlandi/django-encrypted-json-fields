@@ -45,3 +45,20 @@ class TestSettings(TestCase):
 
         with self.settings(FIELD_ENCRYPTION_KEY=[self.key1[:5], self.key2[:5], ]):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+
+    def test_retain_type_of_values(self):
+        # EncryptedJSONField counts on having both value and type reconstructed
+        # when applying eval() after repr(); this most the ensured at least for
+        # the types managed by JSON
+        values = [
+            'a string',
+            10,
+            1.23,
+            True,
+            None,
+            [1, 2, 'three', None],
+        ]
+        for value in values:
+            value2 = eval(repr(value))
+            self.assertEqual(value, value2)
+            self.assertEqual(type(value), type(value2))
