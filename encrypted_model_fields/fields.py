@@ -54,7 +54,7 @@ CRYPTER = None
 def get_crypted_lazy():
     global CRYPTER
     if CRYPTER is None:
-CRYPTER = get_crypter()
+        CRYPTER = get_crypter()
     return CRYPTER
 
 
