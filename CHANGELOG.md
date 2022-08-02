@@ -1,4 +1,4 @@
-# django-encrypted-model-field Changelog
+# django-encrypted-model-fields Changelog
 
 -   0.7.0 - JSONField support
           - deferred get_crypter()
