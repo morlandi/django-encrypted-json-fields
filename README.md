@@ -1,15 +1,14 @@
-# Django Encrypted Model Fields
-
-[![image](https://travis-ci.org/lanshark/django-encrypted-model-fields.png)](https://travis-ci.org/lanshark/django-encrypted-model-fields)
+# Django Encrypted Model Fields (including JSONField)
 
 ## About
 
-This is a fork of
-<https://github.com/foundertherapy/django-cryptographic-fields>. It has
-been renamed, and updated to properly support Python3 and latest
+This is a fork of <https://gitlab.com/lansharkconsulting/django/django-encrypted-model-fields>,
+which in turn was a fork of <https://github.com/foundertherapy/django-cryptographic-fields>.
+
+It has been renamed, and updated to properly support Python3 and latest
 versions of Django.
 
-`django-encrypted-model-fields` is set of fields that wrap standard
+`django-encrypted-json-fields` is set of fields that wrap standard
 Django fields with encryption provided by the python cryptography
 library. These fields are much more compatible with a 12-factor design
 since they take their encryption key from the settings file instead of a
@@ -20,6 +19,31 @@ compatible with Python 3, and it requires, for hosts like Heroku, that
 you either check your key file into your git repository for deployment,
 or implement manual post-deployment processing to write the key stored
 in an environment variable into a file that keyczar can read.
+
+## JSONField support
+
+- The encrypted data remains a valid JSON, so you can inherit from django.db.models.JSONField
+and all validations will still work
+- if the data contains dictionaries, the keys are preserved so that the overall structure remains intact
+- we only encrypt the values
+
+### Implementation notes
+
+I opted to encrypt the repr() of the values, then apply eval() later only (after decrypting).
+
+This is required to reconstruct **both the value and the type**.
+
+Since JSON manages only a few simple types, this naive solution seems enough.
+
+## Deferred get_crypter()
+
+The original `FIELD_ENCRYPTION_KEY` setting now accepts a callable.
+
+Since the callable might need to retrieve some data from the Django models,
+I had to postpone the call to get_crypter() until all apps have been loaded.
+
+As a side effect, now you can always and safely call the `generate_encryption_key`
+management command (see below)
 
 ## Generating an Encryption Key
 
@@ -32,8 +56,8 @@ a new encryption key to set as `settings.FIELD_ENCRYPTION_KEY`:
 Running this command will print an encryption key to the terminal, which
 can be configured in your environment or settings file.
 
-*NOTE: This command will ONLY work in a CLEAN, NEW django project that
-does NOT import encrypted_model_fields in any of it's apps.* IF you are
+~~NOTE: This command will ONLY work in a CLEAN, NEW django project that
+does NOT import encrypted_model_fields in any of it's apps.~~ IF you are
 already importing encrypted_model_fields, try running this in a python
 shell instead:
 
@@ -45,16 +69,16 @@ shell instead:
 
 ## Getting Started
 
-> $ pip install django-encrypted-model-fields
+> $ pip install django-encrypted-json-fields
 
 Add "encrypted_model_fields" to your INSTALLED_APPS setting like this:
 
     INSTALLED_APPS = (
         ...
-        'encrypted_model_fields',
+        'encrypted_json_fields',
     )
 
-`django-encrypted-model-fields` expects the encryption key to be
+`django-encrypted-json-fields` expects the encryption key to be
 specified using `FIELD_ENCRYPTION_KEY` in your project's `settings.py`
 file. For example, to load it from the local environment:
 
@@ -79,24 +103,8 @@ of 100 characters when `EncryptedCharField(max_length=3)` is specified.
 Due to the nature of the encrypted data, filtering by values contained
 in encrypted fields won't work properly. Sorting is also not supported.
 
-## Development Environment
+Credits
+-------
 
-Added Tox for testing with different versions of Django and Python. To get started:
-pip install -r requirements/dev.txt
-
-using `pyenv` add the requisite python interpreters::
-pyenv install 3.6.15
-
-pyenv install 3.7.12
-
-pyenv install 3.8.12
-
-pyenv install 3.9.10
-
-pyenv install 3.10.2
-
-Add the requisite versions to the local version::
-pyenv local 3.6.15 3.7.12 3.8.12 3.9.10 3.10.2
-
-Run `tox`::
-tox
+- <https://gitlab.com/lansharkconsulting/django/django-encrypted-model-fields> has been shared by LANshark Consulting Group, LLC developed
+- <https://github.com/foundertherapy/django-cryptographic-fields> has been shared by Dana Spiegel
