@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '!eu^!hbz*qa%xa(mxfjn)z6b6y_pys3g!lmfm68-zgmrp9#yvt'
+SECRET_KEY = "77777777777777777777777777777777777777777777777777"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -30,8 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_coverage',
-    'encrypted_model_fields',
+    #'django_coverage',
+    'encrypted_json_fields',
     'testapp',
 ]
 

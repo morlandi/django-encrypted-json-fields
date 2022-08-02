@@ -1,5 +1,8 @@
 # django-encrypted-model-field Changelog
 
+-   0.7.0 - JSONField support
+          - deferred get_crypter()
+          - `FIELD_ENCRYPTION_KEY` setting now accepts a callable
 -   0.6.5 - RE-Correct links to repository and homepage
 -   0.6.4 - Correct links to repository and homepage
 -   0.6.3 - Converted to poetry for build system

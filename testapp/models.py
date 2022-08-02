@@ -1,6 +1,6 @@
 import django.db.models
 
-from encrypted_model_fields import fields
+from encrypted_json_fields import fields
 
 
 class TestModel(django.db.models.Model):

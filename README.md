@@ -22,8 +22,7 @@ in an environment variable into a file that keyczar can read.
 
 ## JSONField support
 
-- The encrypted data remains a valid JSON, so you can inherit from django.db.models.JSONField
-and all validations will still work
+- The encrypted data remains a valid JSON, so you can inherit from django.db.models.JSONField and all validations will still work
 - if the data contains dictionaries, the keys are preserved so that the overall structure remains intact
 - we only encrypt the values
 
@@ -48,7 +47,7 @@ management command (see below)
 ## Generating an Encryption Key
 
 There is a Django management command `generate_encryption_key` provided
-with the `encrypted_model_fields` library. Use this command to generate
+with the `encrypted_json_fields` library. Use this command to generate
 a new encryption key to set as `settings.FIELD_ENCRYPTION_KEY`:
 
     ./manage.py generate_encryption_key
@@ -57,8 +56,8 @@ Running this command will print an encryption key to the terminal, which
 can be configured in your environment or settings file.
 
 ~~NOTE: This command will ONLY work in a CLEAN, NEW django project that
-does NOT import encrypted_model_fields in any of it's apps.~~ IF you are
-already importing encrypted_model_fields, try running this in a python
+does NOT import encrypted_json_fields in any of it's apps.~~ IF you are
+already importing encrypted_json_fields, try running this in a python
 shell instead:
 
     import os
@@ -71,28 +70,34 @@ shell instead:
 
 > $ pip install django-encrypted-json-fields
 
-Add "encrypted_model_fields" to your INSTALLED_APPS setting like this:
+Add "encrypted_json_fields" to your INSTALLED_APPS setting like this:
 
+```
     INSTALLED_APPS = (
         ...
         'encrypted_json_fields',
     )
+```
 
 `django-encrypted-json-fields` expects the encryption key to be
 specified using `FIELD_ENCRYPTION_KEY` in your project's `settings.py`
 file. For example, to load it from the local environment:
 
+```
     import os
 
     FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
+```
 
 To use an encrypted field in a Django model, use one of the fields from
-the `encrypted_model_fields` module:
+the `encrypted_json_fields` module:
 
-    from encrypted_model_fields.fields import EncryptedCharField
+```
+    from encrypted_json_fields.fields import EncryptedCharField
 
     class EncryptedFieldModel(models.Model):
         encrypted_char_field = EncryptedCharField(max_length=100)
+```
 
 For fields that require `max_length` to be specified, the `Encrypted`
 variants of those fields will automatically increase the size of the
@@ -103,8 +108,37 @@ of 100 characters when `EncryptedCharField(max_length=3)` is specified.
 Due to the nature of the encrypted data, filtering by values contained
 in encrypted fields won't work properly. Sorting is also not supported.
 
-Credits
--------
+## Running Tests
 
-- <https://gitlab.com/lansharkconsulting/django/django-encrypted-model-fields> has been shared by LANshark Consulting Group, LLC developed
+Does the code actually work?
+
+Running the unit tests from this app:
+
+```
+python manage.py test -v 2
+```
+
+or
+
+```
+./runtests.py
+```
+
+or
+
+```
+coverage run --source='.' runtests.py
+coverage report
+```
+
+Running the unit tests from your project:
+
+```
+python manage.py test -v 2 encrypt_json_fields --settings=encrypt_json_fields.estapp.settings
+```
+
+
+## Credits
+
+- <https://gitlab.com/lansharkconsulting/django/django-encrypted-model-fields> has been shared by Scott Sharkey
 - <https://github.com/foundertherapy/django-cryptographic-fields> has been shared by Dana Spiegel
