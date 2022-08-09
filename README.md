@@ -44,6 +44,40 @@ I had to postpone the call to get_crypter() until all apps have been loaded.
 As a side effect, now you can always and safely call the `generate_encryption_key`
 management command (see below)
 
+## Overridding the Crypter
+
+All functions responsible for encryption/decryption now accept an optional `crypter`
+parameter which, when supplied, is used instead of `FIELD_ENCRYPTION_KEY`:
+
+    - def encrypt_str(s, crypter=None)
+    - def decrypt_str(t, crypter=None)
+    - def encrypt_values(data, crypter=None, skip_keys=None)
+    - def decrypt_values(data, crypter=None)
+
+The use case I had in mind for this was the need to keep the data in clear on the server,
+and export encrypted data for a remote client, sharing a common key.
+
+## App settings
+
+FIELD_ENCRYPTION_KEY
+
+    either a key, a list of keys, or a callable returning the list of keys to
+    be used for encryption
+
+FIELD_SKIP_ENCRYPTION
+
+    skip encryption when saving the model (save data unencrypted)
+
+## Utilities
+
+Some management commands are supplied; run with `--help` for detailed informations:
+
+- generate_encryption_key
+- encrypt_str
+- decrypt_str
+- encrypt_all_fields
+- decrypt_all_fields
+
 ## Generating an Encryption Key
 
 There is a Django management command `generate_encryption_key` provided
@@ -134,7 +168,7 @@ coverage report
 Running the unit tests from your project:
 
 ```
-python manage.py test -v 2 encrypt_json_fields --settings=encrypt_json_fields.estapp.settings
+python manage.py test -v 2 encrypted_json_fields --settings=encrypted_json_fields.testapp.settings
 ```
 
 

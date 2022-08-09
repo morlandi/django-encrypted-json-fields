@@ -51,21 +51,33 @@ def get_crypter():
 CRYPTER = None
 
 
-def get_crypted_lazy():
+def get_crypter_lazy():
     global CRYPTER
     if CRYPTER is None:
         CRYPTER = get_crypter()
     return CRYPTER
 
 
-def encrypt_str(s):
+def encrypt_str(s, crypter=None):
+
+    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
+        return s.encode('utf-8')
+
     # be sure to encode the string to bytes
-    return get_crypted_lazy().encrypt(s.encode('utf-8'))
+    return get_crypter_lazy().encrypt(s.encode('utf-8'))
 
 
-def decrypt_str(t):
+def decrypt_str(t, crypter=None):
     # be sure to decode the bytes to a string
-    return get_crypted_lazy().decrypt(t.encode('utf-8')).decode('utf-8')
+
+    if crypter is None:
+        crypter = get_crypter_lazy()
+
+    try:
+        value = crypter.decrypt(t.encode('utf-8')).decode('utf-8')
+    except cryptography.fernet.InvalidToken:
+        value = t
+    return value
 
 
 def calc_encrypted_length(n):
@@ -93,8 +105,7 @@ class EncryptedMixin(object):
         return self.to_python(value)
 
     def get_db_prep_save(self, value, connection):
-        value = super(EncryptedMixin, self).get_db_prep_save(value, connection)
-
+        value = super().get_db_prep_save(value, connection)
         if value is None:
             return value
         # decode the encrypted value to a unicode string, else this breaks in pgsql
@@ -289,5 +300,7 @@ def decrypt_values(data):
         value = eval(data)
     except cryptography.fernet.InvalidToken:
         value = str(data)
+    except Exception as e:
+        value = ''
     return value
 
