@@ -18,5 +18,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         settings.FIELD_SKIP_ENCRYPTION = True
+        settings.DECRYPTING_ALL_FIELDS = True
         with transaction.atomic():
             scan_and_save_models(options['verbosity'])

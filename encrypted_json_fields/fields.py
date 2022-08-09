@@ -73,14 +73,14 @@ def encrypt_str(s, crypter=None):
 def decrypt_str(t, crypter=None):
     # be sure to decode the bytes to a string
 
-    # ??? if crypter is None and not getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
     if crypter is None:
-        crypter = get_crypter_lazy()
+        # TODO: refactor this
+        if getattr(settings, 'DECRYPTING_ALL_FIELDS', False) or not getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
+            crypter = get_crypter_lazy()
 
     try:
         value = crypter.decrypt(t.encode('utf-8')).decode('utf-8')
-    #except cryptography.fernet.InvalidToken:
-    except:
+    except Exception as e:
         value = t
     return value
 
@@ -261,6 +261,10 @@ def encrypt_values(data, crypter=None, skip_keys=None):
     #     https://medium.com/@pedro.mvsilva/how-to-encrypt-the-values-of-a-postgres-jsonfield-in-django-abd2d9e802bf
     #   - LucasRoesler: "django-encrypted-json"
     #     https://github.com/LucasRoesler/django-encrypted-json
+
+    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False) and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+        return data
+
     if skip_keys is None:
         skip_keys = []
 
@@ -287,6 +291,9 @@ def encrypt_values(data, crypter=None, skip_keys=None):
 
 
 def decrypt_values(data, crypter=None):
+
+    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False) and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+        return data
 
     # Scan the lists, then decode each item recursively
     if isinstance(data, (list, tuple, set)):
