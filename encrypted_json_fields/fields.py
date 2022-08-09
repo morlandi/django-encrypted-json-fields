@@ -60,22 +60,27 @@ def get_crypter_lazy():
 
 def encrypt_str(s, crypter=None):
 
-    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
+    if crypter is None and getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
         return s.encode('utf-8')
 
+    if crypter is None:
+        crypter = get_crypter_lazy()
+
     # be sure to encode the string to bytes
-    return get_crypter_lazy().encrypt(s.encode('utf-8'))
+    return crypter.encrypt(s.encode('utf-8'))
 
 
 def decrypt_str(t, crypter=None):
     # be sure to decode the bytes to a string
 
+    # ??? if crypter is None and not getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
     if crypter is None:
         crypter = get_crypter_lazy()
 
     try:
         value = crypter.decrypt(t.encode('utf-8')).decode('utf-8')
-    except cryptography.fernet.InvalidToken:
+    #except cryptography.fernet.InvalidToken:
+    except:
         value = t
     return value
 
@@ -250,7 +255,7 @@ class EncryptedJSONField(django.db.models.JSONField):
             return value
 
 
-def encrypt_values(data, skip_keys=None):
+def encrypt_values(data, crypter=None, skip_keys=None):
     # Inspired by:
     #   - Pedro Silva: "How to encrypt the values of a Postgres JSONField in Django"
     #     https://medium.com/@pedro.mvsilva/how-to-encrypt-the-values-of-a-postgres-jsonfield-in-django-abd2d9e802bf
@@ -261,12 +266,12 @@ def encrypt_values(data, skip_keys=None):
 
     # Scan the lists, then encode each item recursively
     if isinstance(data, (list, tuple, set)):
-        return [encrypt_values(x, skip_keys) for x in data]
+        return [encrypt_values(x, crypter, skip_keys) for x in data]
 
     # Scan the dicts, then encode each item recursively
     if isinstance(data, dict):
         return {
-            key: encrypt_values(value, skip_keys)
+            key: encrypt_values(value, crypter, skip_keys)
             for key, value in data.items()
         }
 
@@ -275,25 +280,25 @@ def encrypt_values(data, skip_keys=None):
     # Since we don't want lo lose the item's type, we apply repr()
     # to obtain a printable representational string of it,
     # before proceding with the encryption
-    encrypted_data = encrypt_str(repr(data))
+    encrypted_data = encrypt_str(repr(data), crypter)
 
     # Return the result as string, so that it can be JSON-serialized later on
     return encrypted_data.decode()
 
 
-def decrypt_values(data):
+def decrypt_values(data, crypter=None):
 
     # Scan the lists, then decode each item recursively
     if isinstance(data, (list, tuple, set)):
-        return [decrypt_values(x) for x in data]
+        return [decrypt_values(x, crypter) for x in data]
 
     # Scan the dicts, then decode each item recursively
     if isinstance(data, dict):
-        return {key: decrypt_values(value) for key, value in data.items()}
+        return {key: decrypt_values(value, crypter) for key, value in data.items()}
 
     # If we got so far, the data must be a string (the encrypted value)
     try:
-        data = decrypt_str(data)
+        data = decrypt_str(data, crypter)
         # for many Python types, when the result from repr() is passed to eval()
         # we will get the original object;
         # we take advantage of this to reconstruct both the original value and type
@@ -301,6 +306,7 @@ def decrypt_values(data):
     except cryptography.fernet.InvalidToken:
         value = str(data)
     except Exception as e:
-        value = ''
+        # ??? value = ''
+        value = data
     return value
 
