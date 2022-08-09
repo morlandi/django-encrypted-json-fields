@@ -1,5 +1,7 @@
 # django-encrypted-model-fields Changelog
 
+-   0.7.1 - Overridable crypter
+    -   Optionally disable encryption with `FIELD_SKIP_ENCRYPTION`
 -   0.7.0 - JSONField support
     -   deferred get_crypter()
     -   `FIELD_ENCRYPTION_KEY` setting now accepts a callable
