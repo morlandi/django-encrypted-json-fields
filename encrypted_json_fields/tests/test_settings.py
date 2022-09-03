@@ -3,47 +3,48 @@ from django.core.exceptions import ImproperlyConfigured
 
 import cryptography.fernet
 
-from . import fields
+from encrypted_json_fields import fields
 
 
 class TestSettings(TestCase):
+
     def setUp(self):
         self.key1 = cryptography.fernet.Fernet.generate_key()
         self.key2 = cryptography.fernet.Fernet.generate_key()
 
     def test_settings(self):
-        with self.settings(FIELD_ENCRYPTION_KEY=self.key1):
+        with self.settings(EJF_ENCRYPTION_KEYS=self.key1):
             fields.get_crypter()
 
     def test_settings_tuple(self):
-        with self.settings(FIELD_ENCRYPTION_KEY=(self.key1, self.key2,)):
+        with self.settings(EJF_ENCRYPTION_KEYS=(self.key1, self.key2,)):
             fields.get_crypter()
 
     def test_settings_list(self):
-        with self.settings(FIELD_ENCRYPTION_KEY=[self.key1, self.key2, ]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[self.key1, self.key2, ]):
             fields.get_crypter()
 
     def test_settings_empty(self):
-        with self.settings(FIELD_ENCRYPTION_KEY=None):
+        with self.settings(EJF_ENCRYPTION_KEYS=None):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
-        with self.settings(FIELD_ENCRYPTION_KEY=''):
+        with self.settings(EJF_ENCRYPTION_KEYS=''):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
-        with self.settings(FIELD_ENCRYPTION_KEY=[]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[]):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
-        with self.settings(FIELD_ENCRYPTION_KEY=tuple()):
+        with self.settings(EJF_ENCRYPTION_KEYS=tuple()):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
     def test_settings_bad(self):
-        with self.settings(FIELD_ENCRYPTION_KEY=self.key1[:5]):
+        with self.settings(EJF_ENCRYPTION_KEYS=self.key1[:5]):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
-        with self.settings(FIELD_ENCRYPTION_KEY=(self.key1[:5], self.key2,)):
+        with self.settings(EJF_ENCRYPTION_KEYS=(self.key1[:5], self.key2,)):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
-        with self.settings(FIELD_ENCRYPTION_KEY=[self.key1[:5], self.key2[:5], ]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[self.key1[:5], self.key2[:5], ]):
             self.assertRaises(ImproperlyConfigured, fields.get_crypter)
 
     def test_retain_type_of_values(self):
