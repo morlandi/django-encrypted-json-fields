@@ -190,7 +190,7 @@ class TestModelTestCase(TestCase):
         key1 = cryptography.fernet.Fernet.generate_key()
         key2 = cryptography.fernet.Fernet.generate_key()
 
-        with self.settings(FIELD_ENCRYPTION_KEY=key1):
+        with self.settings(EJF_ENCRYPTION_KEYS=key1):
             # make sure we update the crypter with the new key
             encrypted_json_fields.fields.CRYPTER = encrypted_json_fields.fields.get_crypter()
 
@@ -213,7 +213,7 @@ class TestModelTestCase(TestCase):
 
         # test that loading the instance from the database results in usable data
         # (since it uses the older key that's still configured)
-        with self.settings(FIELD_ENCRYPTION_KEY=[key2, key1]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[key2, key1]):
             # make sure we update the crypter with the new key
             encrypted_json_fields.fields.CRYPTER = encrypted_json_fields.fields.get_crypter()
 
@@ -239,7 +239,7 @@ class TestModelTestCase(TestCase):
             inst.save()
 
         # test that saving the instance results in key rotation to the correct key
-        with self.settings(FIELD_ENCRYPTION_KEY=[key2, ]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[key2, ]):
             # make sure we update the crypter with the new key
             encrypted_json_fields.fields.CRYPTER = encrypted_json_fields.fields.get_crypter()
 
@@ -264,7 +264,7 @@ class TestModelTestCase(TestCase):
             self.assertEqual(inst.enc_json_field, 'A string')
 
         # test that the instance with rotated key is no longer readable using the old key
-        with self.settings(FIELD_ENCRYPTION_KEY=[key1, ]):
+        with self.settings(EJF_ENCRYPTION_KEYS=[key1, ]):
             # make sure we update the crypter with the new key
             encrypted_json_fields.fields.CRYPTER = encrypted_json_fields.fields.get_crypter()
 

@@ -24,12 +24,12 @@ def parse_key(key):
 
 def get_crypter():
 
-    configured_keys = getattr(settings, 'FIELD_ENCRYPTION_KEY', None)
+    configured_keys = getattr(settings, 'EJF_ENCRYPTION_KEYS', None)
     if callable(configured_keys):
         configured_keys = configured_keys()
 
     if configured_keys is None:
-        raise ImproperlyConfigured('FIELD_ENCRYPTION_KEY must be defined in settings')
+        raise ImproperlyConfigured('EJF_ENCRYPTION_KEYS must be defined in settings')
 
     try:
         # Allow the use of key rotation
@@ -39,10 +39,10 @@ def get_crypter():
             # else turn the single key into a list of one
             keys = [parse_key(configured_keys), ]
     except Exception as e:
-        raise ImproperlyConfigured(f'FIELD_ENCRYPTION_KEY defined incorrectly: {str(e)}')
+        raise ImproperlyConfigured(f'EJF_ENCRYPTION_KEYS defined incorrectly: {str(e)}')
 
     if len(keys) == 0:
-        raise ImproperlyConfigured('No keys defined in setting FIELD_ENCRYPTION_KEY')
+        raise ImproperlyConfigured('No keys defined in setting EJF_ENCRYPTION_KEYS')
 
     return cryptography.fernet.MultiFernet(keys)
 
@@ -58,9 +58,13 @@ def get_crypter_lazy():
     return CRYPTER
 
 
-def encrypt_str(s, crypter=None):
+def disable_encryption():
+    return getattr(settings, 'EJF_DISABLE_ENCRYPTION', False)
 
-    if crypter is None and getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
+
+def encrypt_str(s: str, crypter=None) -> bytes:
+
+    if crypter is None and disable_encryption():
         return s.encode('utf-8')
 
     if crypter is None:
@@ -70,12 +74,13 @@ def encrypt_str(s, crypter=None):
     return crypter.encrypt(s.encode('utf-8'))
 
 
-def decrypt_str(t, crypter=None):
+def decrypt_str(t: str, crypter=None) -> str:
     # be sure to decode the bytes to a string
+    assert type(t) == str
 
     if crypter is None:
         # TODO: refactor this
-        if getattr(settings, 'DECRYPTING_ALL_FIELDS', False) or not getattr(settings, 'FIELD_SKIP_ENCRYPTION', False):
+        if getattr(settings, 'DECRYPTING_ALL_FIELDS', False) or not disable_encryption():
             crypter = get_crypter_lazy()
 
     try:
@@ -262,7 +267,7 @@ def encrypt_values(data, crypter=None, skip_keys=None):
     #   - LucasRoesler: "django-encrypted-json"
     #     https://github.com/LucasRoesler/django-encrypted-json
 
-    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False) and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+    if disable_encryption() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
         return data
 
     if skip_keys is None:
@@ -292,7 +297,7 @@ def encrypt_values(data, crypter=None, skip_keys=None):
 
 def decrypt_values(data, crypter=None):
 
-    if getattr(settings, 'FIELD_SKIP_ENCRYPTION', False) and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+    if disable_encryption() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
         return data
 
     # Scan the lists, then decode each item recursively

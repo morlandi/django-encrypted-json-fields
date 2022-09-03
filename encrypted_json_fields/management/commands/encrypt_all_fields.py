@@ -17,6 +17,6 @@ class Command(BaseCommand):
         signal.signal(signal.SIGINT, signal_handler)
 
     def handle(self, *args, **options):
-        settings.FIELD_SKIP_ENCRYPTION = False
+        settings.EJF_DISABLE_ENCRYPTION = False
         with transaction.atomic():
             scan_and_save_models(options['verbosity'])

@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'testapp',
 ]
 
-FIELD_ENCRYPTION_KEY = '6-QgONW6TUl5rt4Xq8u-wBwPcb15sIYS2CN6d69zueM='
+EJF_ENCRYPTION_KEYS = '6-QgONW6TUl5rt4Xq8u-wBwPcb15sIYS2CN6d69zueM='
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

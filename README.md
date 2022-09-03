@@ -36,7 +36,7 @@ Since JSON manages only a few simple types, this naive solution seems enough.
 
 ## Deferred get_crypter()
 
-The original `FIELD_ENCRYPTION_KEY` setting now accepts a callable.
+The `EJF_ENCRYPTION_KEYS` setting now accepts a callable.
 
 Since the callable might need to retrieve some data from the Django models,
 I had to postpone the call to get_crypter() until all apps have been loaded.
@@ -47,7 +47,7 @@ management command (see below)
 ## Overridding the Crypter
 
 All functions responsible for encryption/decryption now accept an optional `crypter`
-parameter which, when supplied, is used instead of `FIELD_ENCRYPTION_KEY`:
+parameter which, when supplied, is used instead of `EJF_ENCRYPTION_KEYS`:
 
     - def encrypt_str(s, crypter=None)
     - def decrypt_str(t, crypter=None)
@@ -59,12 +59,12 @@ and export encrypted data for a remote client, sharing a common key.
 
 ## App settings
 
-FIELD_ENCRYPTION_KEY
+EJF_ENCRYPTION_KEYS
 
     either a key, a list of keys, or a callable returning the list of keys to
     be used for encryption
 
-FIELD_SKIP_ENCRYPTION
+EJF_DISABLE_ENCRYPTION
 
     skip encryption when saving the model (save data unencrypted)
 
