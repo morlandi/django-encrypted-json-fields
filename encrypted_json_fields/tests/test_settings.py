@@ -3,6 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 import cryptography.fernet
 
+from encrypted_json_fields import crypter
 from encrypted_json_fields import fields
 
 
@@ -14,38 +15,38 @@ class TestSettings(TestCase):
 
     def test_settings(self):
         with self.settings(EJF_ENCRYPTION_KEYS=self.key1):
-            fields.get_crypter()
+            crypter.build_default_crypter()
 
     def test_settings_tuple(self):
         with self.settings(EJF_ENCRYPTION_KEYS=(self.key1, self.key2,)):
-            fields.get_crypter()
+            crypter.build_default_crypter()
 
     def test_settings_list(self):
         with self.settings(EJF_ENCRYPTION_KEYS=[self.key1, self.key2, ]):
-            fields.get_crypter()
+            crypter.build_default_crypter()
 
     def test_settings_empty(self):
         with self.settings(EJF_ENCRYPTION_KEYS=None):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
         with self.settings(EJF_ENCRYPTION_KEYS=''):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
         with self.settings(EJF_ENCRYPTION_KEYS=[]):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
         with self.settings(EJF_ENCRYPTION_KEYS=tuple()):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
     def test_settings_bad(self):
         with self.settings(EJF_ENCRYPTION_KEYS=self.key1[:5]):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
         with self.settings(EJF_ENCRYPTION_KEYS=(self.key1[:5], self.key2,)):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
         with self.settings(EJF_ENCRYPTION_KEYS=[self.key1[:5], self.key2[:5], ]):
-            self.assertRaises(ImproperlyConfigured, fields.get_crypter)
+            self.assertRaises(ImproperlyConfigured, crypter.build_default_crypter)
 
     def test_retain_type_of_values(self):
         # EncryptedJSONField counts on having both value and type reconstructed

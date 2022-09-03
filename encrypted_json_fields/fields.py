@@ -1,113 +1,55 @@
 import itertools
 import json
+import cryptography.fernet
 
 import django.db
 import django.db.models
 from django.conf import settings
 from django.core import validators
-from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
+from django.db import connection
 from django.utils.functional import cached_property
 from django.core.serializers.json import DjangoJSONEncoder
 
-import cryptography.fernet
+from .crypter import encrypt_str
+from .crypter import decrypt_bytes
+from .crypter import encrypt_values
+from .crypter import decrypt_values
+from .crypter import is_encrypted
 
 
-def parse_key(key):
+def fetch_raw_field_value(model_instance, fieldname):
     """
-    If the key is a string we need to ensure that it can be decoded
-    :param key:
-    :return:
+    Fetch the field value bypassing Django model,
+    thus skipping any decryption
     """
-    return cryptography.fernet.Fernet(key)
-
-
-def get_crypter():
-
-    configured_keys = getattr(settings, 'EJF_ENCRYPTION_KEYS', None)
-    if callable(configured_keys):
-        configured_keys = configured_keys()
-
-    if configured_keys is None:
-        raise ImproperlyConfigured('EJF_ENCRYPTION_KEYS must be defined in settings')
-
-    try:
-        # Allow the use of key rotation
-        if isinstance(configured_keys, (tuple, list)):
-            keys = [parse_key(k) for k in configured_keys]
-        else:
-            # else turn the single key into a list of one
-            keys = [parse_key(configured_keys), ]
-    except Exception as e:
-        raise ImproperlyConfigured(f'EJF_ENCRYPTION_KEYS defined incorrectly: {str(e)}')
-
-    if len(keys) == 0:
-        raise ImproperlyConfigured('No keys defined in setting EJF_ENCRYPTION_KEYS')
-
-    return cryptography.fernet.MultiFernet(keys)
-
-
-#CRYPTER = get_crypter()
-CRYPTER = None
-
-
-def get_crypter_lazy():
-    global CRYPTER
-    if CRYPTER is None:
-        CRYPTER = get_crypter()
-    return CRYPTER
-
-
-def disable_encryption():
-    return getattr(settings, 'EJF_DISABLE_ENCRYPTION', False)
-
-
-def encrypt_str(s: str, crypter=None) -> bytes:
-
-    if crypter is None and disable_encryption():
-        return s.encode('utf-8')
-
-    if crypter is None:
-        crypter = get_crypter_lazy()
-
-    # be sure to encode the string to bytes
-    return crypter.encrypt(s.encode('utf-8'))
-
-
-def decrypt_str(t: str, crypter=None) -> str:
-    # be sure to decode the bytes to a string
-    assert type(t) == str
-
-    if crypter is None:
-        # TODO: refactor this
-        if getattr(settings, 'DECRYPTING_ALL_FIELDS', False) or not disable_encryption():
-            crypter = get_crypter_lazy()
-
-    try:
-        value = crypter.decrypt(t.encode('utf-8')).decode('utf-8')
-    except Exception as e:
-        value = t
-    return value
-
-
-def calc_encrypted_length(n):
-    # calculates the characters necessary to hold an encrypted string of
-    # n bytes
-    return len(encrypt_str('a' * n))
+    if type(model_instance.id) == int:
+        id_clause = str(model_instance.id)
+    else:
+        id_clause = '"%s"' % str(model_instance.id)
+    sql = 'select %s from %s_%s where id=%s' % (fieldname, model_instance._meta.app_label, model_instance._meta.model_name, id_clause)
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+        row = cursor.fetchone()
+    return row[0]
 
 
 class EncryptedMixin(object):
     def to_python(self, value):
+
         if value is None:
             return value
 
         if isinstance(value, (bytes, str)):
-            if isinstance(value, bytes):
-                value = value.decode('utf-8')
-            try:
-                value = decrypt_str(value)
-            except cryptography.fernet.InvalidToken:
-                pass
+            # if isinstance(value, bytes):
+            #     value = value.decode('utf-8')
+            # try:
+            #     value = decrypt_bytes(value)
+            if is_encrypted(value):
+                try:
+                    value = decrypt_bytes(value.encode('utf-8'))
+                except cryptography.fernet.InvalidToken:
+                    pass
 
         return super(EncryptedMixin, self).to_python(value)
 
@@ -119,7 +61,9 @@ class EncryptedMixin(object):
         if value is None:
             return value
         # decode the encrypted value to a unicode string, else this breaks in pgsql
-        return (encrypt_str(str(value))).decode('utf-8')
+        #return (encrypt_str(str(value))).decode('utf-8')
+        value = str(value)
+        return encrypt_str(value).decode('utf-8')
 
     def get_internal_type(self):
         return "TextField"
@@ -259,66 +203,4 @@ class EncryptedJSONField(django.db.models.JSONField):
         except json.JSONDecodeError:
             return value
 
-
-def encrypt_values(data, crypter=None, skip_keys=None):
-    # Inspired by:
-    #   - Pedro Silva: "How to encrypt the values of a Postgres JSONField in Django"
-    #     https://medium.com/@pedro.mvsilva/how-to-encrypt-the-values-of-a-postgres-jsonfield-in-django-abd2d9e802bf
-    #   - LucasRoesler: "django-encrypted-json"
-    #     https://github.com/LucasRoesler/django-encrypted-json
-
-    if disable_encryption() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
-        return data
-
-    if skip_keys is None:
-        skip_keys = []
-
-    # Scan the lists, then encode each item recursively
-    if isinstance(data, (list, tuple, set)):
-        return [encrypt_values(x, crypter, skip_keys) for x in data]
-
-    # Scan the dicts, then encode each item recursively
-    if isinstance(data, dict):
-        return {
-            key: encrypt_values(value, crypter, skip_keys)
-            for key, value in data.items()
-        }
-
-    # We finally have a simple item to work with, which can be:
-    # a string, a number, a boolean, or null.
-    # Since we don't want lo lose the item's type, we apply repr()
-    # to obtain a printable representational string of it,
-    # before proceding with the encryption
-    encrypted_data = encrypt_str(repr(data), crypter)
-
-    # Return the result as string, so that it can be JSON-serialized later on
-    return encrypted_data.decode()
-
-
-def decrypt_values(data, crypter=None):
-
-    if disable_encryption() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
-        return data
-
-    # Scan the lists, then decode each item recursively
-    if isinstance(data, (list, tuple, set)):
-        return [decrypt_values(x, crypter) for x in data]
-
-    # Scan the dicts, then decode each item recursively
-    if isinstance(data, dict):
-        return {key: decrypt_values(value, crypter) for key, value in data.items()}
-
-    # If we got so far, the data must be a string (the encrypted value)
-    try:
-        data = decrypt_str(data, crypter)
-        # for many Python types, when the result from repr() is passed to eval()
-        # we will get the original object;
-        # we take advantage of this to reconstruct both the original value and type
-        value = eval(data)
-    except cryptography.fernet.InvalidToken:
-        value = str(data)
-    except Exception as e:
-        # ??? value = ''
-        value = data
-    return value
 
