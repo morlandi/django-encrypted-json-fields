@@ -53,7 +53,6 @@ def build_default_crypter():
     return build_crypter(configured_keys)
 
 
-#DEFAULT_CRYPTER = build_default_crypter()
 DEFAULT_CRYPTER = None
 
 
@@ -72,21 +71,22 @@ def is_encrypted(s: Union[str, bytes]) -> bool:
     """
     Check if the given string (or bytes) is the result of an encryption
     """
-    if type(s) == bytes:
-        text = s.decode('utf-8')
-    else:
-        text = s
-    # TODO: need something more appropriate and robust
-    if text.startswith('gAAAA'):
-        return True
-    return False
+    result = True
+    try:
+        token = s.encode('utf-8') if (type(s) == str) else s
+        timestamp, data = cryptography.fernet.Fernet._get_unverified_token_data(token)
+    except cryptography.fernet.InvalidToken:
+        result = False
+
+    return result
 
 
 def encrypt_str(s: str, keys=None) -> bytes:
 
     assert type(s) in [str, ], 'wrong type %s' % str(type(s))
 
-    if keys is None and encryption_disabled():
+    #if keys is None and encryption_disabled():
+    if encryption_disabled():
         return s.encode('utf-8')
 
     if keys is None:
@@ -99,20 +99,18 @@ def encrypt_str(s: str, keys=None) -> bytes:
 
 
 def decrypt_bytes(t: bytes, keys=None) -> str:
-    # # be sure to decode the bytes to a string
-    # assert type(t) == str
 
     assert type(t) in [bytes, ]
 
+    if encryption_disabled():
+        return t.decode('utf-8')
+
     if keys is None:
-        # TODO: refactor this
-        if getattr(settings, 'DECRYPTING_ALL_FIELDS', False) or not encryption_disabled():
-            crypter = get_default_crypter()
+        crypter = get_default_crypter()
     else:
         crypter = build_crypter(keys)
 
     try:
-        #value = crypter.decrypt(t.encode('utf-8')).decode('utf-8')
         value = crypter.decrypt(t).decode('utf-8')
     except Exception as e:
         # We were unable to decrypt the bytes; maybe that original key has been removed.
@@ -138,7 +136,7 @@ def encrypt_values(data, keys=None, json_skip_keys=None):
     #   - LucasRoesler: "django-encrypted-json"
     #     https://github.com/LucasRoesler/django-encrypted-json
 
-    if encryption_disabled() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+    if encryption_disabled():
         return data
 
     if json_skip_keys is None:
@@ -168,7 +166,7 @@ def encrypt_values(data, keys=None, json_skip_keys=None):
 
 def decrypt_values(data, keys=None):
 
-    if encryption_disabled() and not getattr(settings, 'DECRYPTING_ALL_FIELDS', False):
+    if encryption_disabled():
         return data
 
     # Scan the lists, then decode each item recursively

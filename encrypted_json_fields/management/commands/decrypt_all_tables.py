@@ -3,20 +3,27 @@ import signal
 from django.db import transaction
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from .utils import scan_and_save_models
+from encrypted_json_fields import crypter
+from .utils import scan_db
+
 
 def signal_handler(signal, frame):
     sys.exit(0)
 
 
 class Command(BaseCommand):
-    help = 'Encrypt fields in existing models'
+    help = 'Scan all tables and decrypt all encryptable fields'
 
     def __init__(self, logger=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         signal.signal(signal.SIGINT, signal_handler)
 
     def handle(self, *args, **options):
-        settings.EJF_DISABLE_ENCRYPTION = False
+
+        # Sanity checks
+        if crypter.encryption_disabled():
+            raise Exception("Encryption has been disabled")
+        assert crypter.get_default_crypter()
+
         with transaction.atomic():
-            scan_and_save_models(options['verbosity'])
+            scan_db(encrypt_fields=False, verbosity=options['verbosity'])

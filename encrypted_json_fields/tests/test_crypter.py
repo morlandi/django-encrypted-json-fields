@@ -51,5 +51,33 @@ class CrypterTestCase(TestCase):
         self.assertEqual(plain_text, decrypted_text_4)
         self.assertFalse(crypter.is_encrypted(decrypted_text_4))
 
+    def test_is_encrypted(self):
 
+        plain_text = "the quick brown fox jumps over the lazy dog"
 
+        encrypted_bytes = crypter.encrypt_str(plain_text)
+        self.assertTrue(crypter.is_encrypted(encrypted_bytes))
+        encrypted_text = encrypted_bytes.decode('utf-8')
+        self.assertTrue(crypter.is_encrypted(encrypted_text))
+
+        self.assertFalse(crypter.is_encrypted('bad string'))
+
+    def test_encryption_disabled(self):
+
+        plain_text = "the quick brown fox jumps over the lazy dog"
+        encrypted_bytes = crypter.encrypt_str(plain_text)
+        encrypted_str =  encrypted_bytes.decode('utf-8')
+
+        self.assertFalse(crypter.is_encrypted(plain_text))
+        self.assertTrue(crypter.is_encrypted(encrypted_bytes))
+        self.assertNotEqual(plain_text, encrypted_str)
+        self.assertEqual(plain_text, crypter.decrypt_bytes(encrypted_bytes))
+
+        with self.settings(EJF_DISABLE_ENCRYPTION=True):
+
+            encrypted_bytes = crypter.encrypt_str(plain_text)
+            encrypted_str =  encrypted_bytes.decode('utf-8')
+            self.assertFalse(crypter.is_encrypted(plain_text))
+            self.assertFalse(crypter.is_encrypted(crypter.encrypt_str(plain_text)))
+            self.assertEqual(plain_text, encrypted_str)
+            self.assertEqual(plain_text, crypter.decrypt_bytes(encrypted_bytes))
