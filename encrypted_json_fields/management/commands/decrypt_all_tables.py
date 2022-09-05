@@ -4,7 +4,7 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from encrypted_json_fields import helpers
-from .utils import scan_db
+from ..utils import scan_db
 
 
 def signal_handler(signal, frame):

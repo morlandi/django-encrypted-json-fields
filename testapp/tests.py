@@ -280,12 +280,8 @@ class TestModelTestCase(TestCase):
             # the field can't be properly decoded
             inst = models.TestModel.objects.only('enc_char_field').get()
             ### !!!
+            # TODO: check this
             if False:
-
-                # data = fields.fetch_raw_field_value(inst, 'enc_char_field')
-                # bytes = data.encode()
-                # text = helpers.decrypt_bytes(bytes, [key1, key2, ])
-
                 fields.fetch_raw_field_value(inst, 'enc_char_field')
                 self.assertNotEqual(inst.enc_char_field, 'This is a test string!')
                 self.assertEqual(inst.enc_char_field[:5], 'gAAAA')

@@ -89,7 +89,7 @@ def is_encrypted(s: Union[str, bytes]) -> bool:
 
 def encrypt_str(s: str, crypter=None) -> bytes:
     """
-    Encrypts the given string applying the supplied keys or the default crypter
+    Encrypts the given string applying either the supplied crypter or, in None, the default crypter
     """
 
     assert type(s) in [str, ], 'wrong type %s' % str(type(s))
@@ -106,6 +106,9 @@ def encrypt_str(s: str, crypter=None) -> bytes:
 
 
 def decrypt_bytes(t: bytes, crypter=None) -> str:
+    """
+    Decrypts the given bytes and returns a string
+    """
 
     assert type(t) in [bytes, ]
 

@@ -1,5 +1,8 @@
 # django-encrypted-model-fields Changelog
 
+-   1.0.0 - helpers available as standalone funcs
+    - major refactoring
+    - more unit tests
 -   0.7.2 - More hacks to optionally disable encryption of JSON fields
 -   0.7.1 - Overridable crypter
     -   Optionally disable encryption with `FIELD_SKIP_ENCRYPTION`
