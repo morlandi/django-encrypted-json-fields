@@ -166,6 +166,12 @@ coverage run --source='.' runtests.py
 coverage report
 ```
 
+## Sample project
+
+A sample project using this app for demonstration purposes is available here:
+
+https://github.com/morlandi/test_django_encrypted_json_fields
+
 
 ## Credits
 
