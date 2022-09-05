@@ -1,7 +1,7 @@
 import json
 from django.apps import apps
 from django.db import connection
-from encrypted_json_fields import crypter
+from encrypted_json_fields import helpers
 from encrypted_json_fields.fields import EncryptedMixin, EncryptedJSONField
 
 
@@ -30,11 +30,11 @@ def _update_table_row(cursor, row, fields, encrypt_fields):
         value = getattr(row, field.name)
         if is_json_field:
             if encrypt_fields:
-                value = crypter.encrypt_values(value)
+                value = helpers.encrypt_values(value)
             value = json.dumps(value)
         else:
             if encrypt_fields:
-                value = crypter.encrypt_str(value).decode('utf-8')
+                value = helpers.encrypt_str(value).decode('utf-8')
         values.append(value)
 
     # example: 'update myapp_mymodel set field1=%s, field2=%s where id=%s'

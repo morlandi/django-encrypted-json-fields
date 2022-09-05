@@ -5,7 +5,7 @@
 This is a fork of <https://gitlab.com/lansharkconsulting/django/django-encrypted-model-fields>,
 which in turn was a fork of <https://github.com/foundertherapy/django-cryptographic-fields>.
 
-It has been renamed, and updated to properly support Python3 and latest
+It has been renamed, and updated to properly support Python3 and the latest
 versions of Django.
 
 `django-encrypted-json-fields` is set of fields that wrap standard
@@ -21,6 +21,9 @@ or implement manual post-deployment processing to write the key stored
 in an environment variable into a file that keyczar can read.
 
 ## JSONField support
+
+`django-encrypted-json-fields` adds a specific support for JSONFields,
+with the following features:
 
 - The encrypted data remains a valid JSON, so you can inherit from django.db.models.JSONField and all validations will still work
 - if the data contains dictionaries, the keys are preserved so that the overall structure remains intact

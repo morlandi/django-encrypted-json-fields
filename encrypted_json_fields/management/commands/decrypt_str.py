@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
-from encrypted_json_fields import crypter
-#import cryptography.fernet
+from encrypted_json_fields import helpers
 
 
 class Command(BaseCommand):
@@ -13,8 +12,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         # Sanity checks
-        if crypter.encryption_disabled():
+        if helpers.encryption_disabled():
             raise Exception("Encryption has been disabled")
 
-        value = crypter.decrypt_bytes(options['text'].encode('utf-8'), keys=options['key'])
+        crypter = helpers.build_crypter(options['key'])
+        value = helpers.decrypt_bytes(options['text'].encode('utf-8'), crypter=crypter)
         self.stdout.write('"%s"' % value)

@@ -11,11 +11,11 @@ from django.db import connection
 from django.utils.functional import cached_property
 from django.core.serializers.json import DjangoJSONEncoder
 
-from .crypter import encrypt_str
-from .crypter import decrypt_bytes
-from .crypter import encrypt_values
-from .crypter import decrypt_values
-from .crypter import is_encrypted
+from .helpers import encrypt_str
+from .helpers import decrypt_bytes
+from .helpers import encrypt_values
+from .helpers import decrypt_values
+from .helpers import is_encrypted
 
 
 def fetch_raw_field_value(model_instance, fieldname):

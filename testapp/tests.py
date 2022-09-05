@@ -6,9 +6,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 import cryptography.fernet
-# import encrypted_json_fields.crypter
-# import encrypted_json_fields.fields
-from encrypted_json_fields import crypter, fields
+from encrypted_json_fields import helpers, fields
 
 from . import models
 
@@ -199,7 +197,7 @@ class TestModelTestCase(TestCase):
 
         with self.settings(EJF_ENCRYPTION_KEYS=key1):
             # make sure we update the crypter with the new key
-            fields.DEFAULT_CRYPTER = crypter.build_default_crypter()
+            fields.DEFAULT_CRYPTER = helpers.build_default_crypter()
 
             test_date_today = datetime.date.today()
             test_date = datetime.date(2011, 1, 1)
@@ -222,7 +220,7 @@ class TestModelTestCase(TestCase):
         # (since it uses the older key that's still configured)
         with self.settings(EJF_ENCRYPTION_KEYS=[key2, key1]):
             # make sure we update the crypter with the new key
-            fields.DEFAULT_CRYPTER = crypter.build_default_crypter()
+            fields.DEFAULT_CRYPTER = helpers.build_default_crypter()
 
             inst = models.TestModel.objects.get()
             self.assertEqual(inst.enc_char_field, 'This is a test string!')
@@ -248,7 +246,7 @@ class TestModelTestCase(TestCase):
         # test that saving the instance results in key rotation to the correct key
         with self.settings(EJF_ENCRYPTION_KEYS=[key2, ]):
             # make sure we update the crypter with the new key
-            fields.DEFAULT_CRYPTER = crypter.build_default_crypter()
+            fields.DEFAULT_CRYPTER = helpers.build_default_crypter()
 
             # test that loading the instance from the database results in usable data
             # (since it uses the older key that's still configured)
@@ -273,7 +271,7 @@ class TestModelTestCase(TestCase):
         # test that the instance with rotated key is no longer readable using the old key
         with self.settings(EJF_ENCRYPTION_KEYS=[key1, ]):
             # make sure we update the crypter with the new key
-            fields.DEFAULT_CRYPTER = crypter.build_default_crypter()
+            fields.DEFAULT_CRYPTER = helpers.build_default_crypter()
 
             # test that loading the instance from the database results in usable data
             # (since it uses the older key that's still configured)
@@ -286,14 +284,14 @@ class TestModelTestCase(TestCase):
 
                 # data = fields.fetch_raw_field_value(inst, 'enc_char_field')
                 # bytes = data.encode()
-                # text = crypter.decrypt_bytes(bytes, [key1, key2, ])
+                # text = helpers.decrypt_bytes(bytes, [key1, key2, ])
 
                 fields.fetch_raw_field_value(inst, 'enc_char_field')
                 self.assertNotEqual(inst.enc_char_field, 'This is a test string!')
                 self.assertEqual(inst.enc_char_field[:5], 'gAAAA')
 
         # reset the DEFAULT_CRYPTER since we screwed with the default configuration with this test
-        fields.DEFAULT_CRYPTER = crypter.build_default_crypter()
+        fields.DEFAULT_CRYPTER = helpers.build_default_crypter()
 
     @mock.patch('django.db.connection.ops.integer_field_range')
     def test_integer_field_validators(self, integer_field_range):
