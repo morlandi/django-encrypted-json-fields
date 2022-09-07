@@ -69,7 +69,9 @@ def get_default_crypter():
     return DEFAULT_CRYPTER
 
 
-def encryption_disabled():
+def encryption_disabled(force):
+    if force:
+        return False
     return getattr(settings, 'EJF_DISABLE_ENCRYPTION', False)
 
 
@@ -96,7 +98,8 @@ def encrypt_str(s: str, crypter=None, force=False) -> bytes:
     assert type(s) in [str, ], 'wrong type %s' % str(type(s))
 
     #if keys is None and encryption_disabled():
-    if encryption_disabled() and not force:
+    if encryption_disabled(force) \
+       or is_encrypted(s):  # prevent double encryption
         return s.encode('utf-8')
 
     if crypter is None:
@@ -114,7 +117,7 @@ def decrypt_bytes(t: bytes, crypter=None, force=False) -> str:
 
     assert type(t) in [bytes, ]
 
-    if encryption_disabled() and not force:
+    if encryption_disabled(force):
         return t.decode('utf-8')
 
     if crypter is None:
@@ -146,7 +149,7 @@ def encrypt_values(data, crypter=None, force=False, json_skip_keys=None):
     #   - LucasRoesler: "django-encrypted-json"
     #     https://github.com/LucasRoesler/django-encrypted-json
 
-    if encryption_disabled() and not force:
+    if encryption_disabled(force):
         return data
 
     if json_skip_keys is None:
@@ -176,7 +179,7 @@ def encrypt_values(data, crypter=None, force=False, json_skip_keys=None):
 
 def decrypt_values(data, crypter=None, force=False):
 
-    if encryption_disabled() and not force:
+    if encryption_disabled(force):
         return data
 
     # Scan the lists, then decode each item recursively

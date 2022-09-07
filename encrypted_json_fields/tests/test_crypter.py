@@ -84,3 +84,31 @@ class CrypterTestCase(TestCase):
             self.assertFalse(helpers.is_encrypted(helpers.encrypt_str(plain_text)))
             self.assertEqual(plain_text, encrypted_str)
             self.assertEqual(plain_text, helpers.decrypt_bytes(encrypted_bytes))
+
+    def test_prevent_double_encryption(self):
+
+        plain_text = "the quick brown fox jumps over the lazy dog"
+        encrypted_bytes = helpers.encrypt_str(plain_text)
+        encrypted_str =  encrypted_bytes.decode('utf-8')
+
+        self.assertFalse(helpers.is_encrypted(plain_text))
+        self.assertTrue(helpers.is_encrypted(encrypted_bytes))
+        self.assertTrue(helpers.is_encrypted(encrypted_str))
+
+        encrypted_bytes2 = helpers.encrypt_str(encrypted_str)
+        encrypted_str2 =  encrypted_bytes.decode('utf-8')
+        self.assertTrue(helpers.is_encrypted(encrypted_bytes2))
+        self.assertTrue(helpers.is_encrypted(encrypted_str2))
+
+        plain_text2 = helpers.decrypt_bytes(encrypted_bytes2)
+        self.assertEqual(plain_text, plain_text2)
+
+    def test_prevent_double_decryption(self):
+
+        plain_text = "the quick brown fox jumps over the lazy dog"
+        encrypted_bytes = helpers.encrypt_str(plain_text)
+
+        text2 = helpers.decrypt_bytes(encrypted_bytes)
+        text3 = helpers.decrypt_bytes(plain_text.encode('utf-8'))
+        self.assertEqual(plain_text, text2)
+        self.assertEqual(plain_text, text3)
