@@ -84,11 +84,12 @@ client.
 | `generate_random_encryption_key()` | generate a key |
 | `build_crypter(keys)` | given a list of keys (or a key) builds the corresponding crypter |
 | `is_encrypted(s: Union[str, bytes]) -> bool `| Check if the given string (or bytes) is the result of an encryption |
-| `encrypt_str(s: str, crypter=None) -> bytes` | Encrypts the given string applying either the supplied crypter or, in None, the default crypter |
-| `decrypt_bytes(t: bytes, crypter=None) -> str` | Decrypts the given bytes and returns a string |
-| `encrypt_values(data, crypter=None, json_skip_keys=None)` | Applyes encryption to a JSON-serializable object |
-| `decrypt_values(data, crypter=None)` | reverses encrypt_values() |
+| `encrypt_str(s: str, crypter=None, force=False) -> bytes` | Encrypts the given string applying either the supplied crypter or, in None, the default crypter |
+| `decrypt_bytes(t: bytes, crypter=None, force=False) -> str` | Decrypts the given bytes and returns a string |
+| `encrypt_values(data, crypter=None, force=False, json_skip_keys=None)` | Applyes encryption to a JSON-serializable object |
+| `decrypt_values(data, crypter=None, force=False)` | reverses encrypt_values() |
 
+* force means: proceed even when encryption is disabled in project's settings
 
 ## Managment commands
 

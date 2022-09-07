@@ -1,5 +1,6 @@
 # django-encrypted-model-fields Changelog
 
+-   1.0.2 - "force" flag added
 -   1.0.0 - helpers available as standalone funcs
     - major refactoring
     - more unit tests

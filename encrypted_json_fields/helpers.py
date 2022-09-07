@@ -87,15 +87,16 @@ def is_encrypted(s: Union[str, bytes]) -> bool:
     return result
 
 
-def encrypt_str(s: str, crypter=None) -> bytes:
+def encrypt_str(s: str, crypter=None, force=False) -> bytes:
     """
-    Encrypts the given string applying either the supplied crypter or, in None, the default crypter
+    Encrypts the given string applying either the supplied crypter or, in None, the default crypter.
+    If force=True, proceed even when encryption is disabled in project's settings.
     """
 
     assert type(s) in [str, ], 'wrong type %s' % str(type(s))
 
     #if keys is None and encryption_disabled():
-    if encryption_disabled():
+    if encryption_disabled() and not force:
         return s.encode('utf-8')
 
     if crypter is None:
@@ -105,14 +106,15 @@ def encrypt_str(s: str, crypter=None) -> bytes:
     return crypter.encrypt(s.encode('utf-8'))
 
 
-def decrypt_bytes(t: bytes, crypter=None) -> str:
+def decrypt_bytes(t: bytes, crypter=None, force=False) -> str:
     """
     Decrypts the given bytes and returns a string
+    If force=True, proceed even when encryption is disabled in project's settings.
     """
 
     assert type(t) in [bytes, ]
 
-    if encryption_disabled():
+    if encryption_disabled() and not force:
         return t.decode('utf-8')
 
     if crypter is None:
@@ -137,14 +139,14 @@ def calc_encrypted_length(n, crypter=None):
     return len(encrypt_str('a' * n, crypter))
 
 
-def encrypt_values(data, crypter=None, json_skip_keys=None):
+def encrypt_values(data, crypter=None, force=False, json_skip_keys=None):
     # Inspired by:
     #   - Pedro Silva: "How to encrypt the values of a Postgres JSONField in Django"
     #     https://medium.com/@pedro.mvsilva/how-to-encrypt-the-values-of-a-postgres-jsonfield-in-django-abd2d9e802bf
     #   - LucasRoesler: "django-encrypted-json"
     #     https://github.com/LucasRoesler/django-encrypted-json
 
-    if encryption_disabled():
+    if encryption_disabled() and not force:
         return data
 
     if json_skip_keys is None:
@@ -152,12 +154,12 @@ def encrypt_values(data, crypter=None, json_skip_keys=None):
 
     # Scan the lists, then encode each item recursively
     if isinstance(data, (list, tuple, set)):
-        return [encrypt_values(x, crypter, json_skip_keys) for x in data]
+        return [encrypt_values(v, crypter, force, json_skip_keys) for v in data]
 
     # Scan the dicts, then encode each item recursively
     if isinstance(data, dict):
         return {
-            key: encrypt_values(value, crypter, json_skip_keys)
+            key: encrypt_values(value, crypter, force, json_skip_keys)
             for key, value in data.items()
         }
 
@@ -166,28 +168,28 @@ def encrypt_values(data, crypter=None, json_skip_keys=None):
     # Since we don't want lo lose the item's type, we apply repr()
     # to obtain a printable representational string of it,
     # before proceding with the encryption
-    encrypted_data = encrypt_str(repr(data), crypter)
+    encrypted_data = encrypt_str(repr(data), crypter, force)
 
     # Return the result as string, so that it can be JSON-serialized later on
     return encrypted_data.decode('utf-8')
 
 
-def decrypt_values(data, crypter=None):
+def decrypt_values(data, crypter=None, force=False):
 
-    if encryption_disabled():
+    if encryption_disabled() and not force:
         return data
 
     # Scan the lists, then decode each item recursively
     if isinstance(data, (list, tuple, set)):
-        return [decrypt_values(x, crypter) for x in data]
+        return [decrypt_values(x, crypter, force) for x in data]
 
     # Scan the dicts, then decode each item recursively
     if isinstance(data, dict):
-        return {key: decrypt_values(value, crypter) for key, value in data.items()}
+        return {key: decrypt_values(value, crypter, force) for key, value in data.items()}
 
     # If we got so far, the data must be a string (the encrypted value)
     try:
-        data = decrypt_bytes(data.encode('utf-8'), crypter)
+        data = decrypt_bytes(data.encode('utf-8'), crypter, force)
         # for many Python types, when the result from repr() is passed to eval()
         # we will get the original object;
         # we take advantage of this to reconstruct both the original value and type
