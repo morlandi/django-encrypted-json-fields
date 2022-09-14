@@ -23,15 +23,25 @@ def fetch_raw_field_value(model_instance, fieldname):
     Fetch the field value bypassing Django model,
     thus skipping any decryption
     """
-    # if type(model_instance.id) == int:
-    #     id_filter = str(model_instance.id)
-    # else:
-    #     id_filter = '"%s"' % str(model_instance.id)
-    # sql = 'select %s from %s_%s where id=%s' % (fieldname, model_instance._meta.app_label, model_instance._meta.model_name, id_filter)
-    sql = 'select %s from %s_%s where id=%%s' % (fieldname, model_instance._meta.app_label, model_instance._meta.model_name)
+
+    if connection.vendor in ['sqlite', ]:
+        if type(model_instance.id) == int:
+            id_filter = str(model_instance.id)
+        else:
+            id_filter = '"%s"' % str(model_instance.id).replace('-', '')
+        sql = 'select %s from %s_%s where id=%s' % (
+            fieldname, model_instance._meta.app_label, model_instance._meta.model_name, id_filter
+        )
+        params = None
+    else:
+        # i.e. 'postgresql'
+        sql = 'select %s from %s_%s where id=%%s' % (fieldname, model_instance._meta.app_label, model_instance._meta.model_name)
+        params = (model_instance.id, )
+
     with connection.cursor() as cursor:
-        cursor.execute(sql, (model_instance.id, ))
+        cursor.execute(sql, params)
         row = cursor.fetchone()
+
     return row[0]
 
 

@@ -1,5 +1,6 @@
 # django-encrypted-model-fields Changelog
 
+-   1.0.4 - fix fetch_raw_field_value() for sqlite
 -   1.0.3 - prevent double encryption
 -   1.0.2 - "force" flag added
 -   1.0.0 - helpers available as standalone funcs
