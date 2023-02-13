@@ -46,6 +46,7 @@ class TestModelTestCase(TestCase):
                     "two": 2,
                 },
             },
+            "date_value": datetime.datetime(2020, 1, 1),
         }
         inst.enc_json_field = json_obj
         inst.save()
@@ -62,6 +63,10 @@ class TestModelTestCase(TestCase):
         self.assertEqual(inst.enc_small_integer_field, 123456789)
         self.assertEqual(inst.enc_positive_small_integer_field, 123456789)
         self.assertEqual(inst.enc_big_integer_field, 9223372036854775807)
+
+        json_obj["date_value"] = "2020-01-01T00:00:00"
+
+        inst.refresh_from_db()
         self.assertEqual(inst.enc_json_field, json_obj)
 
         test_date = datetime.date(2012, 2, 1)

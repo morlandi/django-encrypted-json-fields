@@ -227,7 +227,7 @@ class EncryptedJSONField(django.db.models.JSONField):
         if callable(crypter):
             crypter = crypter()
 
-        value = encrypt_values(value, crypter=crypter)
+        value = encrypt_values(value, crypter=crypter, encoder=self.encoder)
         # The encrypted result is itself a valid JSON-serializable object,
         # so we pass it to our base class for proper serialization
         return super().get_db_prep_save(value, connection)
@@ -254,7 +254,7 @@ class EncryptedJSONField(django.db.models.JSONField):
             if callable(crypter):
                 crypter = crypter()
 
-            return decrypt_values(obj, crypter=crypter)
+            return decrypt_values(obj, crypter=crypter, decoder=self.decoder)
         except json.JSONDecodeError:
             return value
 
