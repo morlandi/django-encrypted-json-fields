@@ -182,10 +182,7 @@ def encrypt_values(data, crypter=None, force=False, json_skip_keys=None, encoder
     else:
         encoder_obj = encoder()
 
-    if isinstance(data, (int, float, bool, str)):
-        encoded_data = repr(data)
-    else:
-        encoded_data = encoder_obj.encode(data)
+    encoded_data = encoder_obj.encode(data)
 
     encrypted_data = encrypt_str(encoded_data, crypter, force)
 
