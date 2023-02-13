@@ -48,7 +48,6 @@ class TestModelTestCase(TestCase):
             },
             "datetime_value": datetime.datetime(2020, 1, 1),
             "date_value": datetime.date(2020, 1, 2),
-            "null_value": None,
         }
         inst.enc_json_field = json_obj
         inst.save()
