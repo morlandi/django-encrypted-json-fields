@@ -1,4 +1,5 @@
 import json
+from ast import literal_eval
 from typing import Union
 
 import cryptography.fernet
@@ -181,7 +182,11 @@ def encrypt_values(data, crypter=None, force=False, json_skip_keys=None, encoder
     else:
         encoder_obj = encoder()
 
-    encoded_data = encoder_obj.encode(data)
+    if isinstance(data, (int, float, bool, str)):
+        encoded_data = repr(data)
+    else:
+        encoded_data = encoder_obj.encode(data)
+
     encrypted_data = encrypt_str(encoded_data, crypter, force)
 
     # Return the result as string, so that it can be JSON-serialized later on
@@ -204,12 +209,15 @@ def decrypt_values(data, crypter=None, force=False, decoder=None):
     try:
         data = decrypt_bytes(data.encode("utf-8"), crypter, force)
 
-        if decoder is None:
-            decoder_obj = json.JSONDecoder()
-        else:
-            decoder_obj = decoder()
+        try:
+            value = literal_eval(data)
+        except ValueError:
+            if decoder is None:
+                decoder_obj = json.JSONDecoder()
+            else:
+                decoder_obj = decoder()
 
-        value = decoder_obj.decode(data)
+            value = decoder_obj.decode(data)
     except cryptography.fernet.InvalidToken:
         value = str(data)
     except Exception as e:
