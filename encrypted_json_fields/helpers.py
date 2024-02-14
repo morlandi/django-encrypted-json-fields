@@ -205,8 +205,13 @@ def decrypt_values(data, crypter=None, force=False, decoder=None):
     if isinstance(data, dict):
         return {key: decrypt_values(value, crypter, force, decoder) for key, value in data.items()}
 
-    # If we got so far, the data must be a string (the encrypted value)
     try:
+        if not isinstance(data, str):
+            return data
+
+        if not is_encrypted(data):
+            return data
+
         data = decrypt_bytes(data.encode("utf-8"), crypter, force)
 
         try:
