@@ -1,4 +1,5 @@
 import django.db.models
+from django.core.serializers.json import DjangoJSONEncoder
 
 from encrypted_json_fields import fields
 
@@ -16,7 +17,7 @@ class TestModel(django.db.models.Model):
     enc_small_integer_field = fields.EncryptedSmallIntegerField(null=True)
     enc_positive_small_integer_field = fields.EncryptedPositiveSmallIntegerField(null=True)
     enc_big_integer_field = fields.EncryptedBigIntegerField(null=True)
-    enc_json_field = fields.EncryptedJSONField(null=False, blank=True, default=dict)
+    enc_json_field = fields.EncryptedJSONField(null=False, blank=True, default=dict, encoder=DjangoJSONEncoder)
 
 
 class TestSearchableModel(django.db.models.Model):

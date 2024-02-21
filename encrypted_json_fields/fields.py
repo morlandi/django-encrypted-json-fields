@@ -54,6 +54,11 @@ def fetch_raw_field_value(model_instance, fieldname):
 
 
 class EncryptedMixin(object):
+    def __init__(self, crypter=None, *args, **kwargs):
+        self.crypter = crypter
+
+        super().__init__(*args, **kwargs)
+
     def to_python(self, value):
         if value is None:
             return value
@@ -64,8 +69,12 @@ class EncryptedMixin(object):
             # try:
             #     value = decrypt_bytes(value)
             if is_encrypted(value):
+                crypter = self.crypter
+                if callable(crypter):
+                    crypter = crypter()
+
                 try:
-                    value = decrypt_bytes(value.encode("utf-8"))
+                    value = decrypt_bytes(value.encode("utf-8"), crypter=crypter)
                 except cryptography.fernet.InvalidToken:
                     pass
 
@@ -81,7 +90,12 @@ class EncryptedMixin(object):
         # decode the encrypted value to a unicode string, else this breaks in pgsql
         # return (encrypt_str(str(value))).decode('utf-8')
         value = str(value)
-        return encrypt_str(value).decode("utf-8")
+
+        crypter = self.crypter
+        if callable(crypter):
+            crypter = crypter()
+
+        return encrypt_str(value, crypter=crypter).decode("utf-8")
 
     def get_internal_type(self):
         return "TextField"
@@ -91,6 +105,8 @@ class EncryptedMixin(object):
 
         if "max_length" in kwargs:
             del kwargs["max_length"]
+
+        kwargs["crypter"] = self.crypter
 
         return name, path, args, kwargs
 
@@ -131,8 +147,13 @@ class EncryptedBooleanField(EncryptedMixin, django.db.models.BooleanField):
             value = "1"
         elif value is False:
             value = "0"
+
+        crypter = self.crypter
+        if callable(crypter):
+            crypter = crypter()
+
         # decode the encrypted value to a unicode string, else this breaks in pgsql
-        return encrypt_str(str(value)).decode("utf-8")
+        return encrypt_str(str(value), crypter=crypter).decode("utf-8")
 
 
 class EncryptedNumberMixin(EncryptedMixin):
@@ -180,9 +201,17 @@ class EncryptedBigIntegerField(EncryptedNumberMixin, django.db.models.BigInteger
 
 
 class EncryptedJSONField(django.db.models.JSONField):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, crypter=None, *args, **kwargs):
         self.skip_keys = kwargs.pop("skip_keys", [])
+        self.crypter = crypter
         super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+
+        kwargs["crypter"] = self.crypter
+
+        return name, path, args, kwargs
 
     def get_db_prep_save(self, value, connection):
         """
@@ -193,7 +222,12 @@ class EncryptedJSONField(django.db.models.JSONField):
         More precisely, well'encrypt the repr() of the values to preserve the type;
         see encrypt_values().
         """
-        value = encrypt_values(value)
+
+        crypter = self.crypter
+        if callable(crypter):
+            crypter = crypter()
+
+        value = encrypt_values(value, crypter=crypter, encoder=self.encoder)
         # The encrypted result is itself a valid JSON-serializable object,
         # so we pass it to our base class for proper serialization
         return super().get_db_prep_save(value, connection)
@@ -215,7 +249,12 @@ class EncryptedJSONField(django.db.models.JSONField):
             # Deserialize the JSON,
             # then decrypt the values of the resulting object
             obj = json.loads(value, cls=self.decoder)
-            return decrypt_values(obj)
+
+            crypter = self.crypter
+            if callable(crypter):
+                crypter = crypter()
+
+            return decrypt_values(obj, crypter=crypter, decoder=self.decoder)
         except json.JSONDecodeError:
             return value
 
