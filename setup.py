@@ -36,7 +36,7 @@ setup(
     url='https://github.com/morlandi/django-encrypted-json-fields',
     zip_safe=False,
     install_requires=[
-        "django >= 2.2",
+        "django >= 3.1",
         "cryptography >= 3.4",
     ],
     classifiers=[
